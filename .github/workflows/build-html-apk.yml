@@ -1,0 +1,39 @@
+name: Build HTML to APK
+
+on: [push, workflow_dispatch]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout HTML files
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Create Cordova App & Copy HTML
+        run: |
+          npm install -g cordova
+          mkdir temp_html
+          cp -r * temp_html/ 2>/dev/null || true
+          cordova create MyApp com.example.myapp "MyApp"
+          rm -rf MyApp/www/*
+          cp -r temp_html/* MyApp/www/
+          cd MyApp
+          cordova platform add android
+          cordova build android
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyHTMLApp-APK
+          path: MyApp/platforms/android/app/build/outputs/apk/debug/*.apk
